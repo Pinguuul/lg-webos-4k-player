@@ -60,7 +60,7 @@ The TV still decodes the original video and audio. The workaround adds no new co
 ## What you need
 
 - A compatible LG webOS TV. The only verified model is listed above.
-- LG's Developer Mode application and an LG developer account.
+- LG's Developer Mode application and an [LG developer account](https://webostv.developer.lge.com/login).
 - A computer with Node.js, npm, and LG's webOS CLI for installing the TV application. CI uses Node.js 22, Python 3.11 and webOS CLI 3.2.6.
 - The application source directory, `app/`, or a package built from that source.
 - A media server running MiniDLNA and sharing readable media files. Tested hosts include Linux and a Synology DS218+ NAS.
@@ -131,11 +131,12 @@ The media URLs advertised in the catalogue must point to an address reachable fr
 
 ## 2. Enable Developer Mode on the TV
 
-1. Install LG's **Developer Mode** application from the TV's app store.
-2. Open it and sign in with your LG developer account.
-3. Enable **Dev Mode Status** and accept the requested restart.
-4. Reopen Developer Mode and enable **Key Server**.
-5. Note the TV's local IP address and the case-sensitive passphrase displayed by the app.
+1. On a computer or phone, open the official [LG webOS TV Developer account page](https://webostv.developer.lge.com/login). Select **Sign In**, then the **Create Account / Sign Up** option in the LG account flow if you do not already have an account. Complete registration and any email verification requested. If you already have an LG account, sign in to the developer website with it and complete any developer registration prompts.
+2. Install LG's **Developer Mode** application from the TV's app store.
+3. Open it and sign in using the **same email address and password** as your LG developer website account.
+4. Enable **Dev Mode Status** and accept the requested restart.
+5. Reopen Developer Mode and enable **Key Server**.
+6. Note the TV's local IP address and the case-sensitive passphrase displayed by the app.
 
 The account login and the Key Server passphrase serve different purposes. Use the passphrase displayed on your own TV when retrieving its development key. Keep the passphrase and private key out of GitHub.
 
