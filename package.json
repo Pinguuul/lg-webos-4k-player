@@ -4,12 +4,19 @@
   "private": true,
   "description": "4K HEVC network player for older LG webOS TVs",
   "license": "MIT",
-  "repository": {"type": "git", "url": "https://github.com/Pinguuul/lg-webos-4k-player.git"},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pinguuul/lg-webos-4k-player.git"
+  },
   "scripts": {
     "check": "node scripts/check.js && python3 -m py_compile support.py && prettier --check app scripts",
     "test": "python3 -m unittest discover -s tests -v",
     "build": "mkdir -p dist && ares-package app -o dist",
     "format": "prettier --write app scripts"
   },
-  "devDependencies": {"@webos-tools/cli": "3.2.6", "prettier": "3.6.2"}
+  "devDependencies": {
+    "@webos-tools/cli": "3.2.6",
+    "acorn": "8.15.0",
+    "prettier": "3.6.2"
+  }
 }

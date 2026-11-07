@@ -277,7 +277,7 @@
     };
     nativeBridge.call(
       "luna://com.webos.media/setSubtitleEnable",
-      JSON.stringify({ mediaId: id, enable: false }),
+      JSON.stringify({ mediaId: id, enable: false })
     );
   }
   function selectSubtitle(key) {
@@ -320,7 +320,7 @@
             subtitleStatus = error;
             show();
           }
-        },
+        }
       );
     }
     poll();
@@ -352,7 +352,7 @@
           if (t.supported) selectSubtitle(t.key);
           else
             show(
-              "This track contains images and requires OCR. Choose a text subtitle.",
+              "This track contains images and requires OCR. Choose a text subtitle."
             );
         },
       });
@@ -383,7 +383,7 @@
       },
       function (error) {
         if (tag === token) show(error);
-      },
+      }
     );
   }
   function applyResume() {
@@ -412,7 +412,7 @@
       if (k === 38 || k === 40) {
         menuIndex = Math.max(
           0,
-          Math.min(menu.rows.length - 1, menuIndex + (k === 40 ? 1 : -1)),
+          Math.min(menu.rows.length - 1, menuIndex + (k === 40 ? 1 : -1))
         );
         renderMenu();
       } else if (k === 13) {

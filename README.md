@@ -59,7 +59,7 @@ The TV still decodes the original video and audio. The workaround adds no new co
 
 - A compatible LG webOS TV. The only verified model is listed above.
 - LG's Developer Mode application and an LG developer account.
-- A computer with Node.js, npm, and LG's webOS CLI for installing the TV application.
+- A computer with Node.js, npm, and LG's webOS CLI for installing the TV application. CI uses Node.js 22, Python 3.11 and webOS CLI 3.2.6.
 - The application source directory, `app/`, or a package built from that source.
 - A Linux computer running MiniDLNA and sharing readable media files.
 - The TV and media server on the same reachable local network. Wired Ethernet was used in the tests.

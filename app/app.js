@@ -57,14 +57,14 @@
     xhr.setRequestHeader("Content-Type", 'text/xml; charset="utf-8"');
     xhr.setRequestHeader(
       "SOAPAction",
-      '"urn:schemas-upnp-org:service:ContentDirectory:1#Browse"',
+      '"urn:schemas-upnp-org:service:ContentDirectory:1#Browse"'
     );
     xhr.onload = function () {
       try {
         if (xhr.status !== 200) throw Error("HTTP " + xhr.status);
         var outer = new DOMParser().parseFromString(
             xhr.responseText,
-            "text/xml",
+            "text/xml"
           ),
           xml = text(outer, "Result"),
           total = parseInt(text(outer, "TotalMatches"), 10) || 0,
@@ -98,7 +98,7 @@
         success(
           result,
           total,
-          parseInt(text(outer, "NumberReturned"), 10) || 0,
+          parseInt(text(outer, "NumberReturned"), 10) || 0
         );
       } catch (e) {
         failure(e.message);
@@ -179,7 +179,7 @@
           message.textContent =
             error + " Press 9 to retry or Yellow for Settings.";
           report("browse-error", error);
-        },
+        }
       );
     }
     page(0);
@@ -226,7 +226,7 @@
               playTime: { start: Math.round((pos || 0) * 1000) },
             },
           },
-        }),
+        })
       );
     v.appendChild(s);
     v.load();
@@ -292,7 +292,7 @@
     }
     if (!root) {
       alert(
-        "Enter a catalogue root ID, usually 64 for MiniDLNA folders or 0 for the UPnP root.",
+        "Enter a catalogue root ID, usually 64 for MiniDLNA folders or 0 for the UPnP root."
       );
       return;
     }
@@ -354,7 +354,7 @@
           try {
             v.currentTime = Math.max(
               0,
-              Math.min(v.duration - 1, v.currentTime + (k === 39 ? 30 : -30)),
+              Math.min(v.duration - 1, v.currentTime + (k === 39 ? 30 : -30))
             );
           } catch (err) {}
           showOverlay();
@@ -369,18 +369,18 @@
       else if (k === 38 || k === 40) {
         selected = Math.max(
           0,
-          Math.min(items.length - 1, selected + (k === 40 ? 1 : -1)),
+          Math.min(items.length - 1, selected + (k === 40 ? 1 : -1))
         );
         render();
       } else if (k === 37 || k === 39) {
         selected = Math.max(
           0,
-          Math.min(items.length - 1, selected + (k === 39 ? 8 : -8)),
+          Math.min(items.length - 1, selected + (k === 39 ? 8 : -8))
         );
         render();
       } else if (k === 13) openSelected();
     },
-    true,
+    true
   );
   document.addEventListener("webOSPlatformBack", function (e) {
     e.preventDefault();
