@@ -653,7 +653,7 @@
       tracks = [];
       cues = [];
       selectedTrack = "";
-      ((subtitleStatus = ""), infoPanel, (infoVisible = false));
+      subtitleStatus = "";
       nativeOffId = "";
       nativePending = "";
       nativeResult = null;
