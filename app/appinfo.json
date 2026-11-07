@@ -1,0 +1,14 @@
+{
+  "id": "org.local.lghttptest",
+  "version": "0.3.0",
+  "vendor": "Pinguuul",
+  "type": "web",
+  "main": "index.html",
+  "title": "LG HTTP Player",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "resolution": "1920x1080",
+  "requiredACG": [],
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": true
+}

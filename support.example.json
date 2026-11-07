@@ -1,0 +1,11 @@
+{
+  "media_root": "/srv/media/Movies",
+  "database": "/var/cache/minidlna/files.db",
+  "cache": "/var/cache/lg-webos-4k-player",
+  "host": "0.0.0.0",
+  "port": 18201,
+  "allowed_clients": [
+    "127.0.0.1",
+    "192.168.1.20"
+  ]
+}

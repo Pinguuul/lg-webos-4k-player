@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>LG HTTP Player</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #101722;
+        color: #fff;
+        font: 30px sans-serif;
+      }
+      #browser {
+        padding: 45px 65px;
+      }
+      h1 {
+        font-size: 40px;
+        margin: 0 0 12px;
+      }
+      #path {
+        color: #9fbed7;
+        margin-bottom: 22px;
+        font-size: 24px;
+        height: 32px;
+        overflow: hidden;
+      }
+      #items {
+        height: 650px;
+      }
+      .row {
+        height: 72px;
+        padding: 17px 20px;
+        margin: 5px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 8px;
+      }
+      .selected {
+        background: #285b86;
+        outline: 2px solid #b9e5ff;
+      }
+      .folder {
+        color: #d4eaff;
+      }
+      .footer {
+        font-size: 24px;
+        color: #abc2d5;
+        margin-top: 15px;
+      }
+      #message {
+        color: #ffd18c;
+        font-size: 24px;
+        min-height: 32px;
+      }
+      #video {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        background: #000;
+      }
+      #overlay {
+        display: none;
+        position: absolute;
+        bottom: 40px;
+        left: 50px;
+        right: 50px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        font-size: 25px;
+      }
+      #counter {
+        float: right;
+      }
+      #settings {
+        display: none;
+        margin: 30px 45px;
+      }
+      #settings p {
+        font-size: 24px;
+        margin: 12px 0;
+      }
+      #settings input {
+        font-size: 26px;
+        padding: 10px;
+        width: 850px;
+      }
+      input {
+        font-size: 32px;
+        padding: 15px;
+        width: 550px;
+      }
+      button {
+        font-size: 30px;
+        padding: 15px;
+        margin: 10px;
+      }
+      #progress {
+        height: 18px;
+        background: #65717d;
+        margin: 12px 0;
+        cursor: pointer;
+      }
+      #progressFill {
+        height: 100%;
+        background: #75d5ff;
+        width: 0;
+      }
+      .playerHint {
+        font-size: 22px;
+        color: #c5d6e3;
+      }
+      #subtitles {
+        position: absolute;
+        bottom: 145px;
+        left: 120px;
+        right: 120px;
+        white-space: pre-line;
+        text-align: center;
+        font-size: 42px;
+        font-weight: bold;
+        line-height: 1.25;
+        text-shadow:
+          2px 2px 4px #000,
+          -2px -2px 4px #000;
+        pointer-events: none;
+      }
+      #menuPanel,
+      #jumpPanel {
+        display: none;
+        position: absolute;
+        top: 95px;
+        left: 270px;
+        width: 1380px;
+        background: rgba(10, 20, 35, 0.97);
+        padding: 30px;
+        border: 2px solid #90bbd5;
+      }
+      #menuPanel h2,
+      #jumpPanel h2 {
+        margin: 0 0 15px;
+      }
+      .menuRow {
+        font-size: 28px;
+        padding: 14px;
+        margin: 4px 0;
+        border-radius: 6px;
+      }
+      #menuPanel p,
+      #jumpPanel p {
+        font-size: 23px;
+        color: #b8cee2;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="browser">
+      <h1>LG HTTP Player <span id="counter"></span></h1>
+      <div id="path"></div>
+      <div id="message"></div>
+      <div id="items"></div>
+      <div class="footer">
+        ↑↓ Select · OK Open · BACK Back · 0 Folders · 9 Refresh · Yellow
+        Settings
+      </div>
+    </div>
+    <video id="video"></video>
+    <div id="overlay"></div>
+    <div id="settings">
+      <h1>Media Server Settings</h1>
+      <p>Media server address and MiniDLNA port:</p>
+      <input id="serverInput" placeholder="http://192.168.1.10:8200" />
+      <p>Catalogue root ID (MiniDLNA folders: 64; UPnP root: 0):</p>
+      <input id="rootInput" />
+      <p>Subtitle service URL (optional; default: server host, port 18201):</p>
+      <input
+        id="subtitleInput"
+        placeholder="http://192.168.1.10:18201"
+      /><br /><button id="save">Save</button><button id="cancel">Back</button>
+    </div>
+    <script src="config.js"></script>
+    <script src="features.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

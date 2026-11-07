@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and compatibility reports
+    url: https://github.com/Pinguuul/lg-webos-4k-player/discussions
+    about: Ask for help or report your TV model's compatibility.
