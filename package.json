@@ -1,6 +1,6 @@
 {
   "name": "lg-webos-4k-player",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "4K HEVC network player for older LG webOS TVs",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "check": "node scripts/check.js && python3 -m py_compile support.py && prettier --check app scripts",
-    "test": "python3 -m unittest discover -s tests -v",
+    "test": "node --test tests/*.test.js && python3 -m unittest discover -s tests -v",
     "build": "mkdir -p dist && ares-package app -o dist",
     "format": "prettier --write app scripts"
   },

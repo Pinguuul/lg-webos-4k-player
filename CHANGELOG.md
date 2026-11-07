@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+- Add an INFO-button playback details panel showing actual TV video resolution, position/duration, state, source and available file/buffering metadata. INFO or BACK closes the panel.
+- Include automated tests for the details panel and preserve ES5 compatibility.
+
+## Documentation update — 8 November 2026
+
+- Verify player 0.3.0 playback from MiniDLNA 1.2.1 on a Synology DS218+ running DSM 7.4.1, with picture and sound confirmed by the owner.
+- Document NAS settings and tested media characteristics; distinguish this result from the untested official Synology Media Server package and NAS subtitle companion.
+- No application-code or IPK change.
+
 ## 0.3.0 — first public release
 
 - Publish the English TV application and optional MiniDLNA subtitle companion under MIT.

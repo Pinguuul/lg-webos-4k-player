@@ -76,7 +76,8 @@
         for (i = 0; i < nodes.length; i++) {
           var n = nodes[i];
           if (n.nodeType !== 1) continue;
-          var folder = localName(n) === "container",
+          var resource = null,
+            folder = localName(n) === "container",
             url = "",
             res = descendants(n, "res");
           for (j = 0; j < res.length; j++)
@@ -85,6 +86,7 @@
               0
             ) {
               url = res[j].textContent;
+              resource = res[j];
               break;
             }
           if (folder || url)
@@ -93,6 +95,9 @@
               title: text(n, "title"),
               folder: folder,
               url: url,
+              resolution: resource ? resource.getAttribute("resolution") : null,
+              size: resource ? resource.getAttribute("size") : null,
+              bitrate: resource ? resource.getAttribute("bitrate") : null,
             });
         }
         success(
@@ -424,6 +429,6 @@
       return subtitleBase;
     },
   });
-  report("boot", { version: "0.3.0" });
+  report("boot", { version: "0.3.1" });
   browse();
 })();

@@ -28,7 +28,9 @@
     nativePending = "",
     nativeResult = null,
     nativeBridge = null,
-    subtitleStatus = "";
+    subtitleStatus = "",
+    infoPanel,
+    infoVisible = false;
   function stored(key) {
     try {
       return JSON.parse(localStorage.getItem(key) || "null");
@@ -63,8 +65,72 @@
       }
     );
   }
+  function hideInfo() {
+    infoVisible = false;
+    if (infoPanel) infoPanel.style.display = "none";
+  }
+  function updateInfo() {
+    if (!item || !infoVisible) return;
+    var width = v.videoWidth,
+      height = v.videoHeight;
+    var resolution =
+      width && height
+        ? width + " × " + height + " (TV)"
+        : item.resolution
+          ? item.resolution + " (catalogue)"
+          : "Not available yet";
+    var a = document.createElement("a");
+    a.href = item.url;
+    var match = /\.([a-z0-9]+)(?:[?#]|$)/i.exec(item.url);
+    var rows = [
+      item.title,
+      "Resolution: " + resolution,
+      "Position: " + clock(v.currentTime) + " / " + clock(v.duration),
+      "Playback: " + (v.paused ? "Paused" : "Playing"),
+      "Source: " + a.hostname,
+    ];
+    if (match) rows.push("File type: " + match[1].toUpperCase());
+    if (Number(item.size) > 0)
+      rows.push(
+        "File size: " + (Number(item.size) / 1000000000).toFixed(2) + " GB"
+      );
+    if (Number(item.bitrate) > 0)
+      rows.push(
+        "Server bitrate: " +
+          ((Number(item.bitrate) * 8) / 1000000).toFixed(1) +
+          " Mb/s"
+      );
+    try {
+      for (var i = 0; i < v.buffered.length; i++) {
+        if (
+          v.buffered.start(i) <= v.currentTime &&
+          v.buffered.end(i) >= v.currentTime
+        ) {
+          rows.push(
+            "Buffered ahead: " +
+              Math.floor(v.buffered.end(i) - v.currentTime) +
+              " sec"
+          );
+          break;
+        }
+      }
+    } catch (e) {}
+    infoPanel.textContent =
+      "Playback information\n\n" + rows.join("\n") + "\n\nINFO or BACK: Close";
+  }
+  function toggleInfo() {
+    if (!item) return;
+    if (infoVisible) {
+      hideInfo();
+      return;
+    }
+    infoVisible = true;
+    infoPanel.style.display = "block";
+    updateInfo();
+  }
   function update() {
     if (!item) return;
+    updateInfo();
     if (pauseButton) pauseButton.textContent = v.paused ? "▶ Play" : "Ⅱ Pause";
     time.textContent = clock(v.currentTime) + " / " + clock(v.duration);
     fill.style.width =
@@ -78,7 +144,7 @@
     notice.textContent =
       text ||
       subtitleStatus ||
-      "OK Pause/Play · ←/→ 30 sec · Blue Go to minute · Yellow Subtitles · BACK Library";
+      "OK Pause/Play · ←/→ 30 sec · Blue Go to minute · Yellow Subtitles · INFO Details · BACK Library";
     overlay.style.display = "block";
     update();
     clearTimeout(hideTimer);
@@ -133,6 +199,7 @@
     panel.style.display = "block";
   }
   function openMenu(name, rows, index) {
+    hideInfo();
     menu = { title: name, rows: rows };
     menuIndex = index || 0;
     renderMenu();
@@ -436,8 +503,12 @@
       return false;
     }
     if (!item) return false;
+    if (back && infoVisible) {
+      hideInfo();
+      return true;
+    }
     if (k === 457) {
-      show();
+      toggleInfo();
       return true;
     }
     if (k === 405) {
@@ -445,6 +516,7 @@
       return true;
     }
     if (k === 406) {
+      hideInfo();
       jump.style.display = "block";
       input.value = String(Math.floor(v.currentTime / 60));
       input.focus();
@@ -504,6 +576,10 @@
       panel = document.createElement("div");
       panel.id = "menuPanel";
       document.body.appendChild(panel);
+      infoPanel = document.createElement("div");
+      infoPanel.id = "infoPanel";
+      infoPanel.style.display = "none";
+      document.body.appendChild(infoPanel);
       jump = document.createElement("div");
       jump.id = "jumpPanel";
       var heading = document.createElement("h2");
@@ -571,12 +647,13 @@
     open: function (x, pos) {
       token++;
       item = x;
+      hideInfo();
       requestedResume = pos || 0;
       resumeApplied = false;
       tracks = [];
       cues = [];
       selectedTrack = "";
-      subtitleStatus = "";
+      ((subtitleStatus = ""), infoPanel, (infoVisible = false));
       nativeOffId = "";
       nativePending = "";
       nativeResult = null;
@@ -584,6 +661,7 @@
       metadata();
     },
     close: function () {
+      hideInfo();
       save();
       token++;
       item = null;
@@ -593,6 +671,7 @@
       hideMenu();
     },
     end: function () {
+      hideInfo();
       if (item) {
         store("bookmark:" + item.url, null);
         localStorage.removeItem("position:" + item.url);

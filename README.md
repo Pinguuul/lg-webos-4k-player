@@ -2,7 +2,7 @@
 
 A working, experimental workaround for a 2015 LG TV that rejected 4K files in SmartShare but could play compatible files through a custom webOS application.
 
-**Current version: 0.3.0 — first public release.** The application interface and helper messages are in English. This is an experimental community project, not an LG product or an app in the LG Content Store.
+**Current version: 0.3.1.** The application interface and helper messages are in English. This is an experimental community project, not an LG product or an app in the LG Content Store.
 
 **[Download the installable IPK from Releases](https://github.com/Pinguuul/lg-webos-4k-player/releases/latest)** · **[Ask a question](https://github.com/Pinguuul/lg-webos-4k-player/discussions)** · **[Report a bug](https://github.com/Pinguuul/lg-webos-4k-player/issues)**
 
@@ -12,7 +12,7 @@ Free to download, use, modify and redistribute under the [MIT licence](LICENSE).
 
 On an **LG 49UF8507-ZB**, running **webOS TV 2.2.3-2155 (beehive-biscayne)** and **firmware 04.06.25**, compatible **2160p HEVC/H.265 files played over the local network with picture and sound** using this custom player.
 
-The working server was **MiniDLNA/ReadyMedia 1.3.3 on Linux**, over wired Ethernet. The original video was delivered to the TV without video transcoding. No root access, modified firmware, external streaming box, or HDMI-connected computer was needed.
+Verified servers are **MiniDLNA/ReadyMedia 1.3.3 on Linux** and **MiniDLNA 1.2.1 on a Synology DS218+ running DSM 7.4.1**. The reference TV uses wired Ethernet. The original video was delivered to the TV without video transcoding. No root access, modified firmware, external streaming box, or HDMI-connected computer was needed.
 
 This demonstrates network playback of the tested files on this particular TV. It does not establish compatibility with every 4K file or every model in the UF850/UF860 family.
 
@@ -23,7 +23,9 @@ This demonstrates network playback of the tested files on this particular TV. It
 | 2160p HEVC playback through the custom application | Picture and sound confirmed by the owner |
 | Switching text subtitles and turning them off | Tested through the actual TV application |
 | Other UF850V/UF860V regional variants | Not tested |
-| Synology NAS / Synology Media Server | Not tested; requires compatibility work described below |
+| Synology DS218+, DSM 7.4.1, MiniDLNA 1.2.1 | Playback tested with player 0.3.0; picture and sound confirmed |
+| Official Synology Media Server package | Not tested |
+| Subtitle companion running on Synology | Not tested |
 | Samsung Tizen TVs | Not supported by this webOS application |
 
 ## The original problem
@@ -41,7 +43,7 @@ The workaround does **not** repair SmartShare or enable a hidden SmartShare sett
 ## How it works
 
 ```text
-MiniDLNA on Linux
+MiniDLNA on Linux or a Synology NAS
   ├── DLNA catalogue ──> Custom TV app: folders and film list
   └── Original file over HTTP ──> TV's built-in media player
 
@@ -61,7 +63,7 @@ The TV still decodes the original video and audio. The workaround adds no new co
 - LG's Developer Mode application and an LG developer account.
 - A computer with Node.js, npm, and LG's webOS CLI for installing the TV application. CI uses Node.js 22, Python 3.11 and webOS CLI 3.2.6.
 - The application source directory, `app/`, or a package built from that source.
-- A Linux computer running MiniDLNA and sharing readable media files.
+- A media server running MiniDLNA and sharing readable media files. Tested hosts include Linux and a Synology DS218+ NAS.
 - The TV and media server on the same reachable local network. Wired Ethernet was used in the tests.
 - For the optional subtitle helper: Python 3.9 or newer, FFmpeg, ffprobe, and read access to the MiniDLNA database and media files.
 
@@ -87,7 +89,7 @@ tests/                         # Generated-media integration tests
 README.md / LICENSE / CHANGELOG.md
 ```
 
-The application ID is `org.local.lghttptest`; the displayed title is **LG HTTP Player**. The 0.3.0 package is `org.local.lghttptest_0.3.0_all.ipk`.
+The application ID is `org.local.lghttptest`; the displayed title is **LG HTTP Player**. The 0.3.1 package is `org.local.lghttptest_0.3.1_all.ipk`.
 
 To obtain the source:
 
@@ -216,7 +218,7 @@ If using a release download, skip packaging and install that `.ipk`. To build fr
 ```sh
 mkdir -p dist
 npm run build
-ares-install --device my-tv dist/org.local.lghttptest_0.3.0_all.ipk
+ares-install --device my-tv dist/org.local.lghttptest_0.3.1_all.ipk
 ares-launch --device my-tv org.local.lghttptest
 ```
 
@@ -295,9 +297,12 @@ This platform-specific service call is an observed capability on the tested firm
 | Film | Blue | Enter a position in minutes, then press OK |
 | Film | Yellow | Open subtitle selection |
 | Subtitle menu | Up / Down, then OK | Choose a track or “Off” |
-| Film | INFO or Up / Down | Show the playback information |
+| Film | INFO | Toggle file details and actual playback resolution |
+| Film | Up / Down | Show the playback controls |
 | Film | BACK | Stop playback and return to the library |
 | Menu | BACK | Close the menu |
+
+Press **INFO** during a film to show the actual decoded resolution reported by the TV, playback position and duration, playback state, source host and file type. File size and server-advertised bitrate are shown when the catalogue provides them; buffered time ahead appears when the TV exposes it. Catalogue resolution is only used as a labelled fallback while decoded dimensions are unavailable. This panel does not infer codecs, HDR or bit depth from a filename. Press INFO again or BACK to close it; a subsequent BACK returns to the library.
 
 A visible pause/play button and clickable progress bar are also available for pointer input.
 
@@ -307,18 +312,38 @@ These controls are implemented, but validation was not exhaustive for every medi
 
 The app uses `disableBackHistoryAPI: true` and handles webOS Back events to return to its library instead of leaving the player immediately.
 
-## What about Synology?
+## Synology NAS: verified with MiniDLNA
 
-**Synology playback has not been verified in this project.** Do not describe the Linux result as a successful Synology test.
+**Network playback was verified on a Synology DS218+ running DSM 7.4.1 and MiniDLNA 1.2.1, using LG HTTP Player 0.3.0 on the reference LG TV.** The owner confirmed both picture and sound on 8 November 2026.
 
-The general approach could apply to a Synology DLNA server if it provides a reachable original-file HTTP URL supported by the TV. However, this release is not a generic UPnP client:
+The player browsed the NAS catalogue, selected the copied film from it, and opened the original file directly from the NAS. The TV reported 3840×1600 video, an advancing playback position and no media error. No application-code change or video transcoding was needed.
 
-1. It would need to obtain the Synology server's actual ContentDirectory control URL instead of assuming MiniDLNA's endpoint.
-2. The configurable root/object IDs and catalogue parsing need verification against that server.
-3. Returned media URLs must be reachable and compatible with seeking on the TV.
-4. The subtitle helper currently depends on MiniDLNA's local SQLite database and media-ID format. It cannot read a Synology catalogue unchanged.
+Test media characteristics:
 
-For now, MiniDLNA on Linux is the reproducible reference setup. Synology is a future compatibility target, not a tested feature.
+| Property | Tested file |
+| --- | --- |
+| Container | Matroska / MKV |
+| Video | HEVC Main, 8-bit, 3840×1600, 24 fps |
+| Audio | E-AC-3, 6 channels |
+| File size | Approximately 13.86 GB |
+| Average total bitrate | Approximately 15.5 Mb/s |
+| Duration | Approximately 1 hour 59 minutes |
+
+The file is a cropped, 4K-width encode commonly labelled 2160p; its actual stored frame height is 1600 pixels. This test does not establish support for every full-frame 3840×2160 file, HDR format, bitrate, or codec combination on the NAS.
+
+### Configure the player for a NAS running MiniDLNA
+
+In the TV app, press **Yellow**, then set:
+
+- **Media server address:** `http://YOUR_NAS_IP:8200` (use your MiniDLNA port if different).
+- **Catalogue root ID:** `64` for the tested Folders view; use `0` or another appropriate object ID for your catalogue.
+- **Subtitle service URL:** optional; a working companion service must be configured separately for that server's database and media files.
+
+Save, open the media folder, and select the film. Wait until copying is complete and MiniDLNA has indexed it before judging compatibility.
+
+This result applies to **MiniDLNA running on Synology hardware**, not to the official **Synology Media Server** package, which remains untested. A different server can require discovery of its actual ContentDirectory control URL, catalogue object IDs, and reachable media addresses.
+
+The subtitle companion was not installed or validated on the NAS in this test. It requires Python, FFmpeg, read access to the relevant MiniDLNA database and library, and its own configuration. The Linux helper cannot safely be reused just by changing the server URL: media IDs refer to a particular server's catalogue and can point to different files on another server.
 
 ## Troubleshooting
 
@@ -401,7 +426,9 @@ Version 0.2.3 translates the application UI and helper responses into English. J
 
 Version 0.3.0 was installed on the same TV. Its clean first-run prompt, settings fields, saving the server/root settings and browsing the MiniDLNA library were checked on the real device. The new helper configuration and conversion flow passed the public integration tests.
 
-No exhaustive codec certification, Synology test, all-model compatibility test, or firmware patch is claimed.
+The Synology/MiniDLNA playback test above is an additional actual-device verification. Player 0.3.1 was also checked on the same NAS file: INFO displayed the TV-reported 3840×1600 resolution, file size, server bitrate and buffer information while playback continued. BACK closed the panel without stopping the film.
+
+No exhaustive codec certification, official Synology Media Server test, all-model compatibility test, or firmware patch is claimed.
 
 ## Development and releases
 
