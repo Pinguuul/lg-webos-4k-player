@@ -30,7 +30,12 @@
     nativeBridge = null,
     subtitleStatus = "",
     infoPanel,
-    infoVisible = false;
+    infoVisible = false,
+    bitmapImage,
+    bitmapMode = false,
+    bitmapCache = {},
+    bitmapPending = {},
+    bitmapFrame = "";
   function stored(key) {
     try {
       return JSON.parse(localStorage.getItem(key) || "null");
@@ -306,7 +311,110 @@
       return a.start - b.start;
     });
   }
+  function resetBitmap() {
+    bitmapMode = false;
+    bitmapCache = {};
+    bitmapPending = {};
+    bitmapFrame = "";
+    if (bitmapImage) {
+      bitmapImage.style.display = "none";
+      bitmapImage.removeAttribute("src");
+    }
+  }
+  function bitmapSegment(segment) {
+    if (segment < 0 || bitmapCache[segment] || bitmapPending[segment]) return;
+    var tag = token,
+      key = selectedTrack,
+      id = mediaId();
+    bitmapPending[segment] = true;
+    function poll() {
+      get(
+        "/bitmap?id=" +
+          id +
+          "&track=" +
+          encodeURIComponent(key) +
+          "&segment=" +
+          segment,
+        function (data, status) {
+          if (tag !== token || !bitmapMode || key !== selectedTrack) return;
+          if (status === 202) {
+            setTimeout(poll, 1000);
+            return;
+          }
+          try {
+            bitmapCache[segment] = JSON.parse(data);
+            subtitleStatus = subtitleStatus.replace(
+              " · preparing segments…",
+              ""
+            );
+            delete bitmapPending[segment];
+            renderSubtitle();
+          } catch (e) {
+            show("Unable to read image subtitle timing.");
+          }
+        },
+        function (error) {
+          if (tag === token && key === selectedTrack) {
+            delete bitmapPending[segment];
+            bitmapPending[segment] = "error";
+            show(error);
+          }
+        }
+      );
+    }
+    poll();
+  }
+  function renderBitmap() {
+    var segment = Math.floor(Math.max(0, v.currentTime) / 60);
+    bitmapSegment(segment);
+    if (v.currentTime % 60 > 40) bitmapSegment(segment + 1);
+    var data = bitmapCache[segment],
+      owner = segment;
+    if (
+      !data &&
+      bitmapCache[segment - 1] &&
+      v.currentTime < bitmapCache[segment - 1].end
+    ) {
+      data = bitmapCache[segment - 1];
+      owner = segment - 1;
+    }
+    if (!data) {
+      bitmapImage.style.display = "none";
+      return;
+    }
+    var frames = data.frames,
+      lo = 0,
+      hi = frames.length;
+    while (lo < hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      if (frames[mid].time <= v.currentTime) lo = mid + 1;
+      else hi = mid;
+    }
+    if (!lo || v.currentTime >= data.end) {
+      bitmapImage.style.display = "none";
+      return;
+    }
+    var frame = frames[lo - 1],
+      path =
+        "/bitmap-image?id=" +
+        mediaId() +
+        "&track=" +
+        encodeURIComponent(selectedTrack) +
+        "&segment=" +
+        owner +
+        "&frame=" +
+        encodeURIComponent(frame.frame);
+    if (path !== bitmapFrame) {
+      bitmapFrame = path;
+      bitmapImage.src = supportUrl(path);
+    }
+    bitmapImage.style.display = "block";
+  }
   function renderSubtitle() {
+    if (item && bitmapMode) {
+      renderBitmap();
+      return;
+    }
     if (!item || !cues.length) {
       subs.textContent = "";
       return;
@@ -349,6 +457,7 @@
   }
   function selectSubtitle(key) {
     disableNativeSubtitle();
+    resetBitmap();
     selectedTrack = key;
     cues = [];
     subs.textContent = "";
@@ -366,6 +475,13 @@
       label = track
         ? language(track.language) + (track.label ? " · " + track.label : "")
         : key;
+    if (track && track.mode === "bitmap") {
+      bitmapMode = true;
+      subtitleStatus = "Image subtitles: " + label + " · preparing segments…";
+      show();
+      renderSubtitle();
+      return;
+    }
     subtitleStatus = "Preparing subtitle: " + label + "…";
     show();
     function poll() {
@@ -412,14 +528,21 @@
       rows.push({
         label:
           (t.key === selectedTrack ? "✓ " : "") +
+          "Track " +
+          (i + 1) +
+          " · " +
           language(t.language) +
           (t.label ? " · " + t.label : "") +
-          (t.supported ? "" : " · image-based format, unavailable"),
+          (t.mode === "bitmap"
+            ? " · PGS"
+            : t.supported
+              ? ""
+              : " · unsupported format"),
         action: function () {
           if (t.supported) selectSubtitle(t.key);
           else
             show(
-              "This track contains images and requires OCR. Choose a text subtitle."
+              "This subtitle format is unsupported by the current service. For PGS, update both the player and subtitle helper to version 0.3.2 or newer."
             );
         },
       });
@@ -573,6 +696,10 @@
       subs = document.createElement("div");
       subs.id = "subtitles";
       document.body.appendChild(subs);
+      bitmapImage = document.createElement("img");
+      bitmapImage.id = "bitmapSubtitles";
+      bitmapImage.style.display = "none";
+      document.body.appendChild(bitmapImage);
       panel = document.createElement("div");
       panel.id = "menuPanel";
       document.body.appendChild(panel);
@@ -645,6 +772,7 @@
       else callback(0);
     },
     open: function (x, pos) {
+      resetBitmap();
       token++;
       item = x;
       hideInfo();
@@ -661,6 +789,7 @@
       metadata();
     },
     close: function () {
+      resetBitmap();
       hideInfo();
       save();
       token++;
@@ -671,6 +800,7 @@
       hideMenu();
     },
     end: function () {
+      resetBitmap();
       hideInfo();
       if (item) {
         store("bookmark:" + item.url, null);
@@ -691,6 +821,7 @@
         item: item,
         tracks: tracks,
         cues: cues.length,
+        bitmapMode: bitmapMode,
         selectedTrack: selectedTrack,
         nativeOffId: nativeOffId,
         nativeResult: nativeResult,

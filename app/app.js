@@ -429,6 +429,6 @@
       return subtitleBase;
     },
   });
-  report("boot", { version: "0.3.1" });
+  report("boot", { version: "0.3.2" });
   browse();
 })();

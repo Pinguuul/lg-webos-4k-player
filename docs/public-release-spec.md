@@ -15,3 +15,7 @@ On 8 November 2026, player 0.3.0 was tested with MiniDLNA 1.2.1 on Synology DS21
 ## INFO-button details request
 
 During playback, INFO must toggle an English details panel, prioritising the actual video dimensions reported by the TV over catalogue resolution. Show available position/duration, state, source, file type, file size, server-advertised bitrate and buffered time. Label a catalogue fallback honestly. BACK closes the panel before stopping playback; clear the panel when a film closes. Do not infer unsupported codec/HDR information from filenames. Verify on the current NAS file and publish an updated installable release.
+
+## PGS subtitle repair
+
+The user reported that every subtitle in the current UHD Blu-ray M2TS film was marked image-based/unavailable. Live helper metadata identified five PGS tracks; native TV selectTrack/setSubtitleEnable returned success but the owner confirmed no subtitles were visible. Support these tracks through transparent timed image overlays without converting the video or inventing language metadata. Preserve text subtitles and INFO behaviour. Verify decoded image timing/clear events on synthetic media and actual TV rendering; document the required helper upgrade.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+- Render PGS image subtitles as timed transparent PNG overlays, prepared in short overlapping segments without OCR or video transcoding. Requires the updated subtitle helper as well as the TV app.
+- Number subtitle tracks when language metadata is absent. Preserve text subtitle conversion and the INFO panel.
+- Add generated PGS integration coverage and UI tests for selecting image subtitles and turning them off.
+
 ## 0.3.1
 
 - Add an INFO-button playback details panel showing actual TV video resolution, position/duration, state, source and available file/buffering metadata. INFO or BACK closes the panel.

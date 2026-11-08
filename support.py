@@ -48,7 +48,7 @@ def describe(media_id):
  tracks=[]
  for stream in json.loads(result.stdout).get('streams',[]):
   tags=stream.get('tags',{});codec=stream.get('codec_name','unknown');idx=stream['index']
-  tracks.append({'key':'s'+str(idx),'language':tags.get('language','und'),'label':tags.get('title',''),'codec':codec,'supported':codec in TEXT})
+  tracks.append({'key':'s'+str(idx),'language':tags.get('language','und'),'label':tags.get('title',''),'codec':codec,'supported':codec in TEXT or codec=='hdmv_pgs_subtitle','mode':'bitmap' if codec=='hdmv_pgs_subtitle' else 'text'})
  for ext in ('srt','vtt','ass','ssa'):
   for sidecar in sorted(p.parent.glob(p.stem+'*.'+ext)):
    sidecar=sidecar.resolve()
@@ -72,7 +72,7 @@ def convert(jobkey,p,track,out):
 
 def subtitle(media_id,track_key):
  p,key,tracks=describe(media_id);track=next((t for t in tracks if t['key']==track_key),None)
- if not track or not track['supported']:raise ValueError('This track is not text; it requires OCR and is unavailable in this player')
+ if not track or (track['codec'] not in TEXT and '_path' not in track):raise ValueError('Choose the image-subtitle endpoint for PGS tracks')
  jobkey=key+'-'+track_key;out=CACHE/(jobkey+'.vtt')
  if out.exists():return 200,out.read_bytes(),'text/vtt; charset=utf-8'
  with lock:
@@ -81,6 +81,55 @@ def subtitle(media_id,track_key):
   if not state:
    jobs[jobkey]='running';threading.Thread(target=convert,args=(jobkey,p,track,out),daemon=True).start()
  return 202,json.dumps({'status':'preparing'}).encode(),'application/json'
+
+# PGS is rendered as transparent timed PNGs, without OCR or video transcoding.
+BITMAP_SECONDS=60
+
+def bitmap_target(media_id,track_key,segment):
+ p,key,tracks=describe(media_id)
+ track=next((t for t in tracks if t['key']==track_key),None)
+ if not track or track['codec']!='hdmv_pgs_subtitle':raise ValueError('Not a PGS subtitle track')
+ try: segment=int(segment)
+ except (TypeError,ValueError):raise ValueError('Invalid subtitle segment')
+ if not 0<=segment<=1440:raise ValueError('Invalid subtitle segment')
+ out=CACHE/(key+'-'+track_key+'-'+str(segment)+'.bitmap')
+ return p,track,segment,out
+
+def convert_bitmap(jobkey,p,track,segment,out):
+ try:
+  with slots:
+   out.mkdir(exist_ok=True)
+   start=max(0,segment*BITMAP_SECONDS-15)
+   duration=segment*BITMAP_SECONDS+BITMAP_SECONDS+15-start
+   command=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-ss',str(start),'-i',str(p),'-t',str(duration),
+    '-filter_complex','[0:'+track['key'][1:]+']scale=1920:1080,format=rgba[sub]',
+    '-map','[sub]','-fps_mode','passthrough','-enc_time_base','1:1000','-frame_pts','1','-threads','2','-y',str(out/'%d.png')]
+   subprocess.run(command,capture_output=True,timeout=180,check=True)
+   frames=[{'time':start+int(x.stem)/1000,'frame':x.stem} for x in out.glob('*.png') if x.stem.lstrip('-').isdigit()]
+   frames.sort(key=lambda x:x['time'])
+   manifest={'start':start,'end':start+duration,'frames':frames}
+   temporary=out/'manifest.tmp';temporary.write_text(json.dumps(manifest));temporary.replace(out/'manifest.json')
+  with lock:jobs[jobkey]='ready'
+ except Exception:
+  with lock:jobs[jobkey]='error'
+
+def bitmap(media_id,track_key,segment):
+ p,track,segment,out=bitmap_target(media_id,track_key,segment)
+ manifest=out/'manifest.json'
+ if manifest.is_file():return 200,manifest.read_bytes(),'application/json'
+ jobkey=out.name
+ with lock:
+  if jobs.get(jobkey)=='error':raise ValueError('Unable to prepare image subtitles')
+  if not jobs.get(jobkey):
+   jobs[jobkey]='running';threading.Thread(target=convert_bitmap,args=(jobkey,p,track,segment,out),daemon=True).start()
+ return 202,json.dumps({'status':'preparing'}).encode(),'application/json'
+
+def bitmap_image(media_id,track_key,segment,frame):
+ _,_,_,out=bitmap_target(media_id,track_key,segment)
+ if not str(frame).lstrip('-').isdigit() or len(str(frame))>10:raise ValueError('Invalid subtitle image')
+ image=out/(str(int(frame))+'.png')
+ if not (out/'manifest.json').is_file() or not image.is_file():raise ValueError('Subtitle image unavailable')
+ return 200,image.read_bytes(),'image/png'
 
 class Handler(BaseHTTPRequestHandler):
  def reply(self,code,data,typ='application/json'):
@@ -94,6 +143,10 @@ class Handler(BaseHTTPRequestHandler):
    mid=q.get('id',[''])[0]
    if u.path=='/metadata':
     _,_,tracks=describe(mid);self.reply(200,{'tracks':[{k:v for k,v in t.items() if not k.startswith('_')} for t in tracks]});return
+   if u.path=='/bitmap':
+    code,data,typ=bitmap(mid,q.get('track',[''])[0],q.get('segment',[''])[0]);self.reply(code,data,typ);return
+   if u.path=='/bitmap-image':
+    code,data,typ=bitmap_image(mid,q.get('track',[''])[0],q.get('segment',[''])[0],q.get('frame',[''])[0]);self.reply(code,data,typ);return
    if u.path=='/subtitle':
     code,data,typ=subtitle(mid,q.get('track',[''])[0]);self.reply(code,data,typ);return
    self.reply(404,{'error':'Not found'})

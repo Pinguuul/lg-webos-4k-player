@@ -2,7 +2,7 @@
 
 A working, experimental workaround for a 2015 LG TV that rejected 4K files in SmartShare but could play compatible files through a custom webOS application.
 
-**Current version: 0.3.1.** The application interface and helper messages are in English. This is an experimental community project, not an LG product or an app in the LG Content Store.
+**Current version: 0.3.2.** The application interface and helper messages are in English. This is an experimental community project, not an LG product or an app in the LG Content Store.
 
 **[Download the installable IPK from Releases](https://github.com/Pinguuul/lg-webos-4k-player/releases/latest)** · **[Ask a question](https://github.com/Pinguuul/lg-webos-4k-player/discussions)** · **[Report a bug](https://github.com/Pinguuul/lg-webos-4k-player/issues)**
 
@@ -89,7 +89,7 @@ tests/                         # Generated-media integration tests
 README.md / LICENSE / CHANGELOG.md
 ```
 
-The application ID is `org.local.lghttptest`; the displayed title is **LG HTTP Player**. The 0.3.1 package is `org.local.lghttptest_0.3.1_all.ipk`.
+The application ID is `org.local.lghttptest`; the displayed title is **LG HTTP Player**. The 0.3.2 package is `org.local.lghttptest_0.3.2_all.ipk`.
 
 To obtain the source:
 
@@ -219,7 +219,7 @@ If using a release download, skip packaging and install that `.ipk`. To build fr
 ```sh
 mkdir -p dist
 npm run build
-ares-install --device my-tv dist/org.local.lghttptest_0.3.1_all.ipk
+ares-install --device my-tv dist/org.local.lghttptest_0.3.2_all.ipk
 ares-launch --device my-tv org.local.lghttptest
 ```
 
@@ -237,7 +237,7 @@ The application declares a 1920×1080 interface layout. This describes the UI co
 
 ## 6. Optional: enable subtitle selection
 
-The helper reads the selected file's subtitle tracks with ffprobe and converts a requested **text subtitle** to WebVTT with FFmpeg. It does not re-encode the film's video or audio.
+The helper reads the selected file's subtitle tracks with ffprobe and converts a requested **text subtitle** to WebVTT or renders a requested **PGS image subtitle** as timed PNG images with FFmpeg. It does not re-encode the film's video or audio.
 
 Install the tools on the Linux media server, then run the configured helper as an ordinary user:
 
@@ -268,7 +268,10 @@ For regular use, run the helper under your operating system's service manager, u
 - External `.srt`, `.vtt`, `.ass`, and `.ssa` files are discovered when their names begin with the film's basename.
 - A filename such as `My Film.ro.srt` can identify an external Romanian subtitle.
 - A generic external filename may appear as “Unspecified language · External file”.
-- Image subtitles, including PGS, need OCR and are not supported by this helper.
+- PGS image subtitles are supported starting with **player and helper 0.3.2**. The helper renders short, overlapping segments to transparent PNG images with timing; the TV app overlays them without OCR or video transcoding. Update both components. Other image subtitle codecs remain unsupported.
+- Image segments are prepared around the current playback position and cached. A short preparation gap can occur after selecting a new track or seeking to an uncached position. This requires FFmpeg with PGS decoding, PNG encoding and `-fps_mode` support (FFmpeg 5 or newer).
+- Tracks with missing language metadata appear as numbered tracks with “Unspecified language”; no language is guessed from a filename.
+- The cache now includes image subtitle segments as well as text subtitles. Place it on a disk with adequate free space; remove obsolete cache data only when the helper is stopped.
 - First-time extraction from a large film can take several minutes. The helper currently has a 240-second extraction timeout; a very slow or large source can fail.
 - Converted subtitles are cached. Later selections of the same cached track are faster.
 - Subtitle selection is remembered for the film URL.
@@ -372,7 +375,7 @@ Inspect the audio codec and track. The current UI does not provide an audio-trac
 
 ### Subtitle selection appears to do nothing
 
-Use version 0.2.2 or later. Check whether the app is still preparing the subtitle, whether the helper is reachable, and whether the selected track is a supported text format.
+Use version 0.2.2 or later. Check whether the app is still preparing the subtitle, whether the helper is reachable, and whether the selected track is supported by your helper version. PGS requires both the app and helper from version 0.3.2 or newer.
 
 At a point in the film where the selected track has no dialogue, an empty overlay can be correct. Test at a known subtitle timestamp. Also verify that the native subtitle-disable request succeeds on your particular TV.
 

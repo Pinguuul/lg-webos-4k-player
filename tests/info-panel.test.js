@@ -3,19 +3,27 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const test = require('node:test');
 
-function fixture() {
+function fixture(withBitmap = false) {
   const elements = {};
   const handlers = {};
   function element() {
-    return {style: {}, textContent: '', appendChild(child) { if (child.id) elements[child.id] = child; }, addEventListener() {}, focus() {}, set href(value) {this.hostname = new URL(value).hostname;}};
+    return {style: {}, textContent: '', appendChild(child) { if (child.id) elements[child.id] = child; }, addEventListener() {}, removeAttribute() {}, focus() {}, set href(value) {this.hostname = new URL(value).hostname;}};
   }
   elements.overlay = element();
   const video = {paused: false, currentTime: 120, duration: 600, videoWidth: 3840, videoHeight: 1600, buffered: {length: 1, start() {return 100;}, end() {return 150;}}, addEventListener(name, fn) {handlers[name] = fn;}};
   const context = {window: {addEventListener() {}}, document: {createElement: element, body: element(), getElementById(id) {return elements[id];}, addEventListener() {}}, localStorage: {getItem() {return null;}, setItem() {}}, setTimeout() {}, clearTimeout() {}, setInterval() {}};
+  if (withBitmap) context.XMLHttpRequest = function() {
+    this.open = (method,url) => {this.url=url;};
+    this.send = () => {
+      this.status=200;
+      this.responseText=JSON.stringify(this.url.includes('/metadata') ? {tracks:[{key:'s1',language:'eng',codec:'hdmv_pgs_subtitle',supported:true,mode:'bitmap'}]} : {start:105,end:195,frames:[{time:105,frame:'0'},{time:140,frame:'35000'}]});
+      this.onload();
+    };
+  };
   vm.runInNewContext(fs.readFileSync('app/features.js','utf8'),context);
   const tools = context.window.playerTools;
   tools.init(video,{server() {return 'http://media.example:8200';}});
-  tools.open({title:'Synthetic media', url:'http://media.example:8200/fixture.mkv', resolution:'1920x1080', size:13000000000, bitrate:2000000},0);
+  tools.open({title:'Synthetic media', url:withBitmap ? 'http://media.example:8200/MediaItems/1.mkv' : 'http://media.example:8200/fixture.mkv', resolution:'1920x1080', size:13000000000, bitrate:2000000},0);
   return {tools,video,elements,handlers};
 }
 
@@ -51,4 +59,17 @@ test('unavailable decoded resolution falls back to explicitly labelled server me
   video.videoWidth=0;video.videoHeight=0;
   tools.key({keyCode:457});
   assert.match(elements.infoPanel.textContent,/1920x1080 \(catalogue\)/);
+});
+
+
+test('PGS image selection survives INFO and clears when Off is selected', () => {
+  const {tools,elements} = fixture(true);
+  tools.subtitleMenu(); tools.key({keyCode:40}); tools.key({keyCode:13});
+  assert.equal(tools.debug().bitmapMode,true);
+  assert.equal(elements.bitmapSubtitles.style.display,'block');
+  tools.key({keyCode:457}); tools.key({keyCode:457});
+  assert.equal(tools.debug().bitmapMode,true);
+  tools.subtitleMenu(); tools.key({keyCode:38}); tools.key({keyCode:13});
+  assert.equal(tools.debug().bitmapMode,false);
+  assert.equal(elements.bitmapSubtitles.style.display,'none');
 });

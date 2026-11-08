@@ -1,6 +1,6 @@
 {
   "name": "lg-webos-4k-player",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "4K HEVC network player for older LG webOS TVs",
   "license": "MIT",
