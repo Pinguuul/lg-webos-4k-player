@@ -92,21 +92,27 @@ def bitmap_target(media_id,track_key,segment):
  try: segment=int(segment)
  except (TypeError,ValueError):raise ValueError('Invalid subtitle segment')
  if not 0<=segment<=1440:raise ValueError('Invalid subtitle segment')
- out=CACHE/(key+'-'+track_key+'-'+str(segment)+'.bitmap')
+ out=CACHE/(key+'-'+track_key+'-'+str(segment)+'.bitmap-v2')
  return p,track,segment,out
 
 def convert_bitmap(jobkey,p,track,segment,out):
  try:
   with slots:
    out.mkdir(exist_ok=True)
-   start=max(0,segment*BITMAP_SECONDS-15)
-   duration=segment*BITMAP_SECONDS+BITMAP_SECONDS+15-start
-   command=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-ss',str(start),'-i',str(p),'-t',str(duration),
-    '-filter_complex','[0:'+track['key'][1:]+']scale=1920:1080,format=rgba[sub]',
-    '-map','[sub]','-fps_mode','passthrough','-enc_time_base','1:1000','-frame_pts','1','-threads','2','-y',str(out/'%d.png')]
-   subprocess.run(command,capture_output=True,timeout=180,check=True)
-   frames=[{'time':start+int(x.stem)/1000,'frame':x.stem} for x in out.glob('*.png') if x.stem.lstrip('-').isdigit()]
-   frames.sort(key=lambda x:x['time'])
+   lookback=15
+   while True:
+    start=max(0,segment*BITMAP_SECONDS-lookback)
+    duration=segment*BITMAP_SECONDS+BITMAP_SECONDS+15-start
+    for old in out.glob('*.png'):old.unlink()
+    command=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-ss',str(start),'-i',str(p),'-t',str(duration),
+     '-filter_complex','[0:'+track['key'][1:]+']scale=1920:1080,format=rgba[sub]',
+     '-map','[sub]','-fps_mode','passthrough','-enc_time_base','1:1000','-frame_pts','1','-threads','2','-y',str(out/'%d.png')]
+    subprocess.run(command,capture_output=True,timeout=180,check=True)
+    frames=[{'time':start+int(x.stem)/1000,'frame':x.stem} for x in out.glob('*.png') if x.stem.lstrip('-').isdigit()]
+    frames.sort(key=lambda x:x['time'])
+    # Recover active PGS state before this segment, including long signs/dialogue.
+    if start==0 or any(frame['time']<=segment*BITMAP_SECONDS for frame in frames):break
+    lookback=max(60,lookback*2)
    manifest={'start':start,'end':start+duration,'frames':frames}
    temporary=out/'manifest.tmp';temporary.write_text(json.dumps(manifest));temporary.replace(out/'manifest.json')
   with lock:jobs[jobkey]='ready'

@@ -44,9 +44,9 @@ class HelperIntegrationTest(unittest.TestCase):
         palette = b'\x00\x00'+bytes([0,16,128,128,0,1,235,128,128,255])
         window = bytes([1,0])+struct.pack('>HHHH',850,950,64,32)
         sup = cls.base / 'fixture.sup'
-        sup.write_bytes(packet(0x16,pcs(0,1,0x80),.1)+packet(0x17,window,.1)+packet(0x14,palette,.1)+packet(0x15,ods,.1)+packet(0x80,b'',.1)+packet(0x16,pcs(1,0,0),1.5)+packet(0x80,b'',1.5))
+        sup.write_bytes(packet(0x16,pcs(0,1,0x80),.1)+packet(0x17,window,.1)+packet(0x14,palette,.1)+packet(0x15,ods,.1)+packet(0x80,b'',.1)+packet(0x16,pcs(1,0,0),1.5)+packet(0x80,b'',1.5)+packet(0x16,pcs(2,1,0x80),30)+packet(0x17,window,30)+packet(0x14,palette,30)+packet(0x15,ods,30)+packet(0x80,b'',30)+packet(0x16,pcs(3,0,0),70)+packet(0x80,b'',70))
         bitmap_movie = cls.media / 'bitmap.mkv'
-        subprocess.run(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=64x64:r=1:d=2','-i',str(sup),'-map','0:v','-map','1:s','-c:v','mpeg4','-c:s','copy','-t','2',str(bitmap_movie)],check=True,timeout=30)
+        subprocess.run(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=64x64:r=1:d=75','-i',str(sup),'-map','0:v','-map','1:s','-c:v','mpeg4','-c:s','copy','-t','75',str(bitmap_movie)],check=True,timeout=30)
         outside = cls.base / 'outside.mkv'
         outside.write_bytes(movie.read_bytes())
         database = cls.base / 'files.db'
@@ -137,6 +137,21 @@ class HelperIntegrationTest(unittest.TestCase):
         self.assertEqual(self.get('/bitmap-image?id=3&track='+track['key']+'&segment=0&frame=../bad')[0],400)
         self.assertEqual(self.get('/bitmap?id=3&track='+track['key']+'&segment=999999')[0],400)
         self.assertEqual(self.get('/subtitle?id=3&track='+track['key'])[0],400)
+
+    def test_bitmap_nonzero_segment_recovers_long_active_cue(self):
+        track = json.loads(self.get('/metadata?id=3')[1])['tracks'][0]['key']
+        endpoint = '/bitmap?id=3&track='+track+'&segment=1'
+        deadline = time.monotonic()+15
+        status, body = self.get(endpoint)
+        while status==202 and time.monotonic()<deadline:
+            time.sleep(.1)
+            status,body = self.get(endpoint)
+        self.assertEqual(status,200,body)
+        frames=json.loads(body)['frames']
+        active=[frame for frame in frames if frame['time']<=60]
+        self.assertTrue(active,'A PGS cue displayed at 30s must still exist at 60s')
+        self.assertAlmostEqual(active[-1]['time'],30,delta=.5)
+        self.assertAlmostEqual(frames[-1]['time'],70,delta=.5)
 
     def test_media_root_and_id_validation(self):
         for endpoint in ['/metadata?id=2', '/metadata?id=1%20OR%201=1', '/subtitle?id=1&track=../../bad']:
