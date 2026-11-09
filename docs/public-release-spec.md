@@ -19,3 +19,5 @@ During playback, INFO must toggle an English details panel, prioritising the act
 ## PGS subtitle repair
 
 The user reported that every subtitle in the current UHD Blu-ray M2TS film was marked image-based/unavailable. Live helper metadata identified five PGS tracks; native TV selectTrack/setSubtitleEnable returned success but the owner confirmed no subtitles were visible. Support these tracks through transparent timed image overlays without converting the video or inventing language metadata. Preserve text subtitles and INFO behaviour. Verify decoded image timing/clear events on synthetic media and actual TV rendering; document the required helper upgrade.
+
+PGS acceptance result, 9 November 2026: the owner confirmed that subtitles are visible with the new overlay. The source/helper can now be published as version 0.3.2. Do not expand this into a claim that every track, language or file has been tested.

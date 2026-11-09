@@ -2,6 +2,8 @@
 
 ## 0.3.2
 
+- PGS captions confirmed visible on the reference LG TV by the owner on 9 November 2026.
+
 - Render PGS image subtitles as timed transparent PNG overlays, prepared in short overlapping segments without OCR or video transcoding. Requires the updated subtitle helper as well as the TV app.
 - Number subtitle tracks when language metadata is absent. Preserve text subtitle conversion and the INFO panel.
 - Add generated PGS integration coverage and UI tests for selecting image subtitles and turning them off.

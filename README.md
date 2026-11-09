@@ -285,6 +285,12 @@ Version 0.2.2 sends `setSubtitleEnable` with `enable: false` to `luna://com.webo
 
 This platform-specific service call is an observed capability on the tested firmware, not a promise of a portable public API across all webOS releases. A successful conversion alone does not prove the TV disabled its native captions.
 
+### Upgrading to PGS support
+
+Update **both the TV app and the companion helper** to version 0.3.2 or later. Installing only the new IPK is insufficient if the old helper still marks PGS tracks as unavailable.
+
+Use the helper source from the same release, retain your private `support.local.json`, and restart your existing helper process or service. The configuration format is unchanged. Then update the IPK, reopen the player, start the film and press **Yellow** to choose a PGS track.
+
 ## Remote-control guide
 
 | Screen | Button | Action |
@@ -433,6 +439,8 @@ Version 0.3.0 was installed on the same TV. Its clean first-run prompt, settings
 The Synology/MiniDLNA playback test above is an additional actual-device verification. Player 0.3.1 was also checked on the same NAS file: INFO displayed the TV-reported 3840×1600 resolution, file size, server bitrate and buffer information while playback continued. BACK closed the panel without stopping the film.
 
 No exhaustive codec certification, official Synology Media Server test, all-model compatibility test, or firmware patch is claimed.
+
+PGS captions were also confirmed visible by the owner on 9 November 2026 using player/helper 0.3.2 and a UHD Blu-ray M2TS source on the Linux/MiniDLNA setup. The tested embedded track had no language metadata and appeared as numbered Track 1. Generated-media tests additionally verify transparent clear events, nonzero seek timing and a long cue crossing a segment boundary. This PGS test does not extend the earlier NAS verification to a subtitle helper running on Synology.
 
 ## Development and releases
 
